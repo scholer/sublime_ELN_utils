@@ -1,0 +1,14 @@
+[
+    { "caption": "ELN Snippet: Journal Date Header", "command": "eln_insert_snippet", "args": {"snippet": "journal_date_header"} },
+    // ElnDnaComplementFromSelectionCommand
+    { "caption": "ELN Seq: Transform selection to DNA complement.", "command": "eln_sequence_transform",
+      "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true}
+    },
+    { "caption": "ELN Seq: Transform selection to DNA reversed complement.", "command": "eln_sequence_transform",
+      "args": {"complement": true, "reverse": true, "dna_only": false, "replace": true}
+    },
+    { "caption": "ELN Seq: Reverse selection", "command": "eln_sequence_transform",
+      "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}
+    },
+    { "caption": "ELN Seq: Sequence stats", "command": "eln_sequence_stats", "args": {"dna_only": false} }
+]
