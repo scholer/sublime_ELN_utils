@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+MgCl<sub>2</sub>
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>mgcl2</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+	<description>MgCl2</description>
+</snippet>
