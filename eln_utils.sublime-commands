@@ -1,5 +1,16 @@
 [
     { "caption": "ELN Snippet: Journal Date Header", "command": "eln_insert_snippet", "args": {"snippet": "journal_date_header"} },
+    { "caption": "ELN Snippet: Timestamp", "command": "eln_insert_snippet", "args": {"snippet": "journal_timestamp"} },
+
+    {"caption": "ELN: Merge notes (clean)", "command": "eln_merge_journal_notes",
+        "args": {"move": true, "add_journal_header": false, "paragraphs_to_bullet": false, "add_timestamp": false}},
+    {"caption": "ELN: Merge notes (timestamp)", "command": "eln_merge_journal_notes",
+        "args": {"move": true, "add_journal_header": false, "paragraphs_to_bullet": false, "add_timestamp": true}},
+    {"caption": "ELN: Merge notes (bullets+timestamp)", "command": "eln_merge_journal_notes",
+        "args": {"move": true, "add_journal_header": false, "paragraphs_to_bullet": true, "add_timestamp": true}},
+    {"caption": "ELN: Merge notes (header+bullets+timestamp)", "command": "eln_merge_journal_notes",
+        "args": {"move": true, "add_journal_header": true, "paragraphs_to_bullet": true, "add_timestamp": true}},
+
     // ElnDnaComplementFromSelectionCommand
     { "caption": "ELN Seq: Transform selection to DNA complement.", "command": "eln_sequence_transform",
       "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true}

@@ -1,0 +1,8 @@
+{
+    "external_journal_dirs": ["C:/Users/scholer/Dropbox/Apps/Plain.txt"],
+    "journal_notes_pattern": "*.txt",
+    "view_filename_pat": "RasmusProjects.*?(?P<expid>RS\\d{3})[-_+\\s]+(?P<exp_desc>.*)\\.mediawiki",
+    "notes_filename_pat": ".*?(?P<expid>RS\\d{3})([-_])?(?P<exp_subentryidx>\\w)?.?\\s*?(?P<exp_desc>.*)\\.txt",
+    "hej": "der",
+    "notes_filename_keys": ["expid"]
+}
