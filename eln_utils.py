@@ -65,7 +65,7 @@ def get_setting(key, default_value=None):
     changes, even to mutable entries, cannot simply be persisted with sublime.save_settings.
     You have to keep a reference to the original settings object and make changes to this.
     """
-    settings = sublime.load_settings('ELN_Utils.sublime-settings')
+    settings = sublime.load_settings('eln_utils.sublime-settings')
     return settings.get(key, default_value)
 
 
@@ -90,22 +90,28 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         self.add_timestamp = add_timestamp
 
         # find files
-        settings = sublime.load_settings('ELN_Utils.sublime-settings')
+        settings = sublime.load_settings('eln_utils.sublime-settings')
         note_dirs = settings.get('external_journal_dirs')
         print("note_dirs:", note_dirs)
         view_filename = self.view.file_name()
         if not note_dirs:
-            print("Setting key external_journal_dirs not found, using current file dir...")
+            print("Setting key 'external_journal_dirs' not found, using current file dir...")
             if not view_filename:
                 print("Current view is not saved; aborting...")
             note_dirs = [os.path.dirname(view_filename)]
         journal_notes_pattern = settings.get('journal_notes_pattern', '*')
+        min_file_size = settings.get('min_file_size', 10)
         self.filepaths = [os.path.join(dirpath, filename) for dirpath in note_dirs
                           for filename in glob.glob(os.path.join(dirpath, journal_notes_pattern))]
+        self.filepaths = [fp for fp in self.filepaths
+                          if os.path.isfile(fp)
+                          and os.path.getsize(fp) >= min_file_size]
         self.filebasenames = [os.path.basename(pathname) for pathname in self.filepaths]
         print(self.filebasenames)
         if not self.filepaths:
-            print("No files found in directories:", note_dirs)
+            msg = "No files larger than {} bytes found in {}".format(min_file_size, note_dirs)
+            print(msg)
+            sublime.status_message(msg)
             return
 
         # select best file candidate:
@@ -177,7 +183,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
             content = "\n".join([header, content])
 
         # Remove content from origin file:
-        if self.move and False:
+        if self.move:
             with open(self.filename, 'w') as fp:
                 fp.write("\n")
             print("Removed content from", self.filename)
@@ -187,6 +193,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         # ValueError: Edit objects may not be used after the TextCommand's run method has returned
         # print("Inserted %s chars at pos %s" % (len(content), self.position))
         self.view.run_command("eln_insert_text", {"text": content, "position": self.position})
+        sublime.status_message("Moved notes from {} to current cursor position.".format(self.filename))
 
 
 
