@@ -22,23 +22,23 @@
                             {
                                 "command": "open_file",
                                 "args": {"file": "${packages}/ELN_Utils/eln_utils.sublime-settings"},
-                                "caption": "Settings – Default"
+                                "caption": "Settings â€“ Default"
                             },
                             {
                                 "command": "open_file",
                                 "args": {"file": "${packages}/User/eln_utils.sublime-settings"},
-                                "caption": "Settings – User"
+                                "caption": "Settings â€“ User"
                             },
                             { "caption": "-" },
                             {
                                 "command": "open_file",
                                 "args": {"file": "${packages}/ELN_Utils/Default ($platform).sublime-keymap"},
-                                "caption": "Key Bindings – Default"
+                                "caption": "Key Bindings â€“ Default"
                             },
                             {
                                 "command": "open_file",
                                 "args": {"file": "${packages}/User/Default ($platform).sublime-keymap"},
-                                "caption": "Key Bindings – User"
+                                "caption": "Key Bindings â€“ User"
                             }
                         ]
                     }
