@@ -1,6 +1,9 @@
 [
     { "caption": "ELN Snippet: Journal Date Header", "command": "eln_insert_snippet", "args": {"snippet": "journal_date_header"} },
-    { "caption": "ELN Snippet: Timestamp", "command": "eln_insert_snippet", "args": {"snippet": "journal_timestamp"} },
+    { "caption": "ELN Snippet: Timestamp (* %H:%M > )", "command": "eln_insert_snippet", "args": {"snippet": "journal_timestamp"} },
+    { "caption": "ELN Snippet: Datestamp %Y-%m-%d", "command": "eln_insert_snippet", "args": {"snippet": "{date:%Y-%m-%d}"} },
+    { "caption": "ELN Snippet: Datestamp %Y%m%d", "command": "eln_insert_snippet", "args": {"snippet": "{date:%Y%m%d}"} },
+    { "caption": "ELN Snippet: Datetime %Y-%m-%d %H:%M", "command": "eln_insert_snippet", "args": {"snippet": "{date:%Y-%m-%d %H:%M}"} },
 
     {"caption": "ELN: Merge notes (clean)", "command": "eln_merge_journal_notes",
         "args": {"move": true, "add_journal_header": false, "paragraphs_to_bullet": false, "add_timestamp": false}},

@@ -238,7 +238,8 @@ class ElnInsertSnippetCommand(sublime_plugin.TextCommand):
             position = self.view.sel()[0].begin()
             #position = self.view.size()
 
-        text = snippets[snippet]
+        # If <snippet> is not a key in the standard snippets dict, assume it is usable as-is:
+        text = snippets.get(snippet, snippet)
         text = text.format(date=datetime.now())
         self.view.insert(edit, position, text)
         print("Inserted %s chars at pos %s" % (len(text), position))

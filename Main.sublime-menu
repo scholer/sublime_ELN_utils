@@ -15,13 +15,13 @@
                         [
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/eln_utils/README.md"},
+                                "args": {"file": "${packages}/ELN_Utils/README.md"},
                                 "caption": "README"
                             },
                             { "caption": "-" },
                             {
                                 "command": "open_file",
-                                "args": {"file": "${packages}/eln_utils/eln_utils.sublime-settings"},
+                                "args": {"file": "${packages}/ELN_Utils/eln_utils.sublime-settings"},
                                 "caption": "Settings – Default"
                             },
                             {
@@ -32,18 +32,14 @@
                             { "caption": "-" },
                             {
                                 "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/eln_utils/Default ($platform).sublime-keymap",
-                                },
+                                "args": {"file": "${packages}/ELN_Utils/Default ($platform).sublime-keymap"},
                                 "caption": "Key Bindings – Default"
                             },
                             {
                                 "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default ($platform).sublime-keymap",
-                                },
+                                "args": {"file": "${packages}/User/Default ($platform).sublime-keymap"},
                                 "caption": "Key Bindings – User"
-                            },
+                            }
                         ]
                     }
                 ]
