@@ -1,8 +1,9 @@
+// ELN Utils default settings:
+// Copy items from here to your own ELN Utils "Settings - User" file.
 {
-    "external_journal_dirs": ["C:/Users/scholer/Dropbox/Apps/Plain.txt"],
+    "external_journal_dirs": ["C:/Users/scholer/Dropbox/Apps/Plain.txt", "C:/Users/scholer/Dropbox/Apps/"],
     "journal_notes_pattern": "*.txt",
     "view_filename_pat": "RasmusProjects.*?(?P<expid>RS\\d{3})[-_+\\s]+(?P<exp_desc>.*)\\.mediawiki",
     "notes_filename_pat": ".*?(?P<expid>RS\\d{3})([-_])?(?P<exp_subentryidx>\\w)?.?\\s*?(?P<exp_desc>.*)\\.txt",
-    "hej": "der",
     "notes_filename_keys": ["expid"]
 }

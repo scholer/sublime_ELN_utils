@@ -36,6 +36,7 @@ import sublime
 import sublime_plugin
 
 
+SETTINGS_NAME = 'eln_utils.sublime-settings'
 snippets = {'journal_date_header': "'''Journal, {date:%Y-%m-%d}:'''",
             'journal_daily_start': "'''Journal, {date:%Y-%m-%d}:'''\n* {date:%H:%M} > ",
             'journal_timestamp': "* {date:%H:%M} > ",
@@ -65,7 +66,7 @@ def get_setting(key, default_value=None):
     changes, even to mutable entries, cannot simply be persisted with sublime.save_settings.
     You have to keep a reference to the original settings object and make changes to this.
     """
-    settings = sublime.load_settings('eln_utils.sublime-settings')
+    settings = sublime.load_settings(SETTINGS_NAME)
     return settings.get(key, default_value)
 
 
@@ -90,7 +91,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         self.add_timestamp = add_timestamp
 
         # find files
-        settings = sublime.load_settings('eln_utils.sublime-settings')
+        settings = sublime.load_settings(SETTINGS_NAME)
         note_dirs = settings.get('external_journal_dirs')
         print("note_dirs:", note_dirs)
         view_filename = self.view.file_name()
@@ -116,9 +117,8 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
 
         # select best file candidate:
         # find file that matches current file the most:
-        #def match_alphabetically(view_name, cand_name):
-        #    pass
-        # Edit: just add view_filename to the list, sort the list, and see what index it is at:
+        # Just add view_filename to a combined list, sort the list, and see what index it is at.
+        # Then when you use that index against self.filebasenames, it will select a file that is close.
         combined = [view_filename] + self.filebasenames
         combined.sort()
         selected_index = combined.index(view_filename)
@@ -137,6 +137,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
                                   for key in notes_filename_keys) if match else 0
                               for match in notes_regex_matches]
             try:
+                # Use the index for the first entry that yields a match in the list above:
                 selected_index = notes_all_keys.index(True)
             except ValueError:
                 print("notes_filename_keys:", notes_filename_keys,
@@ -148,6 +149,10 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
                 print([[(match.group(key), view_regex_match.group(key)) for key in notes_filename_keys]
                        if match else 0
                        for match in notes_regex_matches])
+                # Perhaps fall back to the last selected file, if it is present in the list:
+                last_selected = settings.get("last_external_journal")
+                if last_selected in self.filebasenames:
+                    selected_index = self.filebasenames.index(last_selected)
 
         # Display quick panel allowing the user to select the file:
         self.view.window().show_quick_panel(self.filebasenames, self.on_file_selected, selected_index=selected_index)
@@ -163,6 +168,10 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
             return
         self.filename = self.filepaths[index]
         print("Selected file:", self.filename)
+        settings = sublime.load_settings(SETTINGS_NAME)
+        settings.set("last_external_journal", self.filename)
+        sublime.save_settings(SETTINGS_NAME)
+
         # read file:
         with open(self.filename) as fp:
             content = fp.read()
