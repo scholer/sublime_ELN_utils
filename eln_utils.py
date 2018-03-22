@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-##    Copyright 2015 Rasmus Scholer Sorensen, rasmusscholer@gmail.com
-##
-##    This program is free software: you can redistribute it and/or modify
-##    it under the terms of the GNU General Public License as published by
-##    the Free Software Foundation, either version 3 of the License, or
-##    (at your option) any later version.
-##
-##    This program is distributed in the hope that it will be useful,
-##    but WITHOUT ANY WARRANTY; without even the implied warranty of
-##    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##    GNU General Public License for more details.
-##
-##    You should have received a copy of the GNU General Public License
-##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#    Copyright 2015-2018 Rasmus Scholer Sorensen, rasmusscholer@gmail.com
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# pylint: disable=C0103,W0232,R0903,R0201,W0201,E1101
+# pylintx: disable=C0103,W0232,R0903,R0201,W0201,E1101
 
 """
 Sublime ELN utils - Sublime plugin with various utilities
@@ -29,7 +29,8 @@ from __future__ import print_function
 import os
 import glob
 import re
-from datetime import datetime
+from datetime import date, datetime
+import urllib.parse
 import logging
 logger = logging.getLogger(__name__)
 import sublime
@@ -64,8 +65,14 @@ def rcompl(seq, wc_map="dna", strict=True):
     """ Return complement of seq, reversed. """
     return compl(seq[::-1], wc_map, strict=strict)
 
-rseq = lambda seq: "".join(reversed(seq))
-dna_filter = lambda seq: "".join(b for b in seq.upper() if b in "ATCGU")
+
+def dna_filter(seq):
+    return "".join(b for b in seq.upper() if b in "ATCGU")
+
+
+def get_settings():
+    """ Get all ELN_Utils settings. """
+    return sublime.load_settings(SETTINGS_NAME)
 
 
 def get_setting(key, default_value=None):
@@ -78,6 +85,10 @@ def get_setting(key, default_value=None):
     settings = sublime.load_settings(SETTINGS_NAME)
     return settings.get(key, default_value)
 
+
+#
+# ELN Text commands:
+# ------------------
 
 
 class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
@@ -166,7 +177,6 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         # Display quick panel allowing the user to select the file:
         self.view.window().show_quick_panel(self.filebasenames, self.on_file_selected, selected_index=selected_index)
 
-
     def on_file_selected(self, index):
         """
         Called after user has selected the file to move note from.
@@ -214,7 +224,6 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         sublime.status_message("Moved notes from {} to current cursor position.".format(self.filename))
 
 
-
 class ElnInsertTextCommand(sublime_plugin.TextCommand):
     """
     Command string: eln_insert_text
@@ -231,8 +240,6 @@ class ElnInsertTextCommand(sublime_plugin.TextCommand):
 
         self.view.insert(edit, position, text)
         print("Inserted %s chars at pos %s" % (len(text), position))
-
-
 
 
 class ElnInsertSnippetCommand(sublime_plugin.TextCommand):
@@ -263,12 +270,262 @@ class ElnInsertSnippetCommand(sublime_plugin.TextCommand):
         print("Inserted %s chars at pos %s" % (len(text), position))
 
 
+class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
+    """
+    Command string: eln_create_new_experiment
+    Create a new experiment:
+    - exp folder, if mediawiker_experiments_basedir is specified.
+    - new wiki page (in new buffer), if mediawiker_experiments_title_fmt is boolean true.
+    - load buffer with template, if mediawiker_experiments_template
+    --- and fill in template argument, as specified by mediawiker_experiments_template_args
+    - Done: Create link to the new experiment page and append it to experiments_overview_page.
+    - TODO: Move this command to ELN_Utils package.
+    - Done: Option to save view buffer to file.
+    - Done: Option to enable auto_save
+    This is a window command, since we might not have any views open when it is invoked.
+
+    Question: Does Sublime wait for window commands to finish, or are they dispatched to run
+    asynchronously in a separate thread? ST waits for one command to finish before a new is invoked.
+    In other words: *Commands cannot be used as functions*. That makes ST plugin development a bit convoluted.
+    It is generally best to avoid any "run_command" calls, until the end of any methods/commands.
+
+    """
+
+    # def __init__(self):
+    #     self.expid = None
+    #     self.titledesc = None
+    #     self.pagetitle = None
+    #     self.bigcomment = None
+    #     self.exp_buffer_text = None
+    #     self.view = None
+    #     sublime_plugin.WindowCommand.__init__(self)
+
+    def run(self, expid=None, titledesc=None):
+        self.expid = expid
+        self.titledesc = titledesc
+        self.exp_buffer_text = ""
+
+        if self.expid is not None:
+            self.expid_received(self.expid)
+        else:
+            # Start input chain:
+            self.window.show_input_panel('Experiment ID:', '', self.expid_received, None, None)
+
+    def expid_received(self, expid):
+        """ Saves expid input and asks the user for titledesc. """
+        self.expid = expid # empty string is OK.
+        if self.titledesc is not None:
+            self.titledesc_received(self.titledesc)
+        else:
+            self.window.show_input_panel('Exp title desc:', '', self.titledesc_received, None, None)
+
+    def titledesc_received(self, titledesc):
+        """ Saves titledesc input and asks the user for bigcomment text. """
+        self.titledesc = titledesc # empty string is OK.
+        # self.window.show_input_panel('Big page comment:', self.expid, self.bigcomment_received, None, None)
+        self.done_collecting_variables()
+
+    def bigcomment_received(self, bigcomment):
+        """ Saves bigcomment input and invokes on_done. """
+        self.bigcomment = bigcomment
+        self.done_collecting_variables()
+
+    def done_collecting_variables(self, dummy=None):
+        """
+        Called when all user input have been collected.
+        Settings:
+            'eln_experiments_basedir'
+            'eln_experiments_title_fmt'
+            'eln_experiments_filename_fmt'
+            'eln_experiments_filename_quote'
+            'eln_experiments_filename_quote_safe'
+            'eln_experiments_foldername_fmt'
+            'eln_experiments_template'
+            'eln_experiments_template_subst_mode'
+            'eln_experiments_template_kwargs'
+            # 'eln_experiments_overview_page'
+            'eln_experiments_save_to_file'
+            'eln_experiments_enable_autosave'
+        """
+        print("\nCreating new experiment (expid=%s, titledesc=%s..." % (self.expid, self.titledesc))
+        # Ways to format a date/datetime as string: startdate.strftime("%Y-%m-%d"), or "{:%Y-%m-%d}".format(startdate)
+
+        # Non-attribute settings:
+        startdate = date.today().isoformat()    # datetime.now()
+        # The base directory where the user stores his experiments, e.g. /home/me/documents/experiments/
+        settings = get_settings()
+        exp_basedir = settings.get('eln_experiments_basedir')
+        if exp_basedir is None:
+            raise ValueError("'eln_experiments_basedir' must be defined in your configuration, aborting.")
+        if exp_basedir:
+            exp_basedir = os.path.abspath(os.path.expanduser(exp_basedir))
+        # title format, e.g. "MyExperiments/{expid} {titledesc}". If not set, no new buffer is created.
+        title_fmt = settings.get('eln_experiments_title_fmt', '{expid} {titledesc}')
+        filename_fmt = settings.get('eln_experiments_filename_fmt', '{expid}.md')
+        # quoting filename. 'quote' is for url paths, 'quote_plus' is for form data (uses '+' for spaces)
+        filename_quote = settings.get('eln_experiments_filename_quote', None)  # None, 'quote', or 'quote_plus'
+        filename_quote_safe = settings.get('eln_experiments_filename_quote_safe', '')  # don't touch these chars
+        # How to format the folder, e.g. "{expid} {titledesc}"
+        # If exp_foldername_fmt is not specified, use title_fmt - remove any '/' and whatever is before it
+        foldername_fmt = settings.get('eln_experiments_foldername_fmt', (title_fmt or '').split('/')[-1])
+        # Template settings:
+        template = settings.get('eln_experiments_template')
+        if template is None:
+            print("Note: 'eln_experiments_template' is not specified in config.")
+        if template and template.startswith("~"):
+            template = os.path.expanduser(template)
+        # template parameters substitution mode. Can be any of 'python-fmt', 'python-%' or 'mediawiki'.
+        template_subst_mode = settings.get('eln_experiments_template_subst_mode', 'python-fmt') or 'python-fmt'
+        # Constant args to feed to the template (Mostly for shared templates).
+        template_kwargs = settings.get('eln_experiments_template_kwargs', {}) or {}
+        # If save_to_file is True, the view/buffer is saved locally immediately upon creation:
+        # Experiments overview page: A file/page that lists (and links) to all experiments.
+        experiments_overview_page = settings.get('eln_experiments_overview_page')
+        save_to_file = settings.get('eln_experiments_save_to_file', True)
+        # Enable auto save. Requires auto-save plugin. github.com/scholer/auto-save
+        enable_autosave = settings.get('eln_experiments_enable_autosave', False)
+
+        if not any((self.expid, self.titledesc)):
+            # If both expid and exp_title are empty, just abort:
+            print("expid and titledesc are both empty, aborting...")
+            return
+
+        # 1. Make experiment folder, if appropriate:
+        foldername = folderpath = None
+        if exp_basedir and foldername_fmt:
+            if os.path.isdir(exp_basedir):
+                foldername = foldername_fmt.format(expid=self.expid, titledesc=self.titledesc)
+                folderpath = os.path.join(exp_basedir, foldername)
+                if os.path.isdir(folderpath):
+                    msg = "NOTICE: The folderpath for the new experiment already exists: %s" % folderpath
+                else:
+                    try:
+                        os.mkdir(folderpath)
+                        msg = "OK: Created new experiment directory: %s" % (folderpath,)
+                    except FileExistsError:
+                        msg = "ERROR: New exp directory already exists: %s" % (folderpath,)
+                    except (WindowsError, OSError, IOError) as e:
+                        msg = "ERROR creating new exp directory '%s' :: %s" % (folderpath, repr(e))
+            else:
+                # We are not creating a new folder for the experiment because basedir doesn't exists:
+                msg = "ERROR: Configured experiment base dir does not exists: %s" % (exp_basedir,)
+            print(msg)
+            sublime.status_message(msg)
+        else:
+            print("WARNING: exp_basedir or foldername_fmt not defined: %s, %s" % (exp_basedir, foldername_fmt))
+
+        # 2. Make new view, if title_fmt is specified:
+        self.pagetitle = title_fmt.format(expid=self.expid, titledesc=self.titledesc)
+        self.view = exp_view = sublime.active_window().new_file() # Make a new file/buffer/view
+        self.window.focus_view(exp_view)  # exp_view is now the window's active_view
+        view_default_dir = folderpath
+        filename = filename_fmt.format(title=self.pagetitle, expid=self.expid, titledesc=self.titledesc)
+        if filename_quote:
+            if filename_quote == 'quote_plus':
+                filename = urllib.parse.quote_plus(filename, safe=filename_quote_safe)
+            elif filename_quote == 'quote':
+                filename = urllib.parse.quote(filename, safe=filename_quote_safe)
+        if view_default_dir:
+            view_default_dir = os.path.expanduser(view_default_dir)
+            print("Setting view's default dir to:", view_default_dir)
+            exp_view.settings().set('default_dir', view_default_dir) # Update the view's working dir.
+        exp_view.set_name(filename)
+        filepath = os.path.join(folderpath, filename)
+        # Manually set the syntax file to use (if the view does not have a file extension)
+        # self.view.set_syntax_file('Packages/Mediawiker/Mediawiki.tmLanguage')
+
+        # 3. Create big comment text:
+        # if self.bigcomment:
+        #     exp_figlet_comment = get_figlet_text(self.bigcomment) # Makes the big figlet text
+        #     # Adjusts the figlet to produce a comment and add it to the exp_buffer_text:
+        #     self.exp_buffer_text += adjust_figlet_comment(exp_figlet_comment, foldername or self.bigcomment)
+
+        # 4. Generate template :
+        if template:
+            # Load the template: #
+            print("Using template:", template)
+            try:
+                # Open user configured local template file:
+                with open(template) as fd:
+                    template_content = fd.read()
+                print(" - Template loaded from disk; length:", len(template_content))
+            except FileNotFoundError as exc:
+                print("ERROR: Could not open template file:", template, "(%s)" % exc)
+                return
+
+            # Perform template variable substitution:
+            # Update kwargs with user input and today's date:
+            template_kwargs.update({
+                'expid': self.expid, 'titledesc': self.titledesc, 'title': self.pagetitle,
+                'filename': filename, 'foldername': foldername, 'filepath': filepath, 'folderpath': folderpath,
+                'startdate': startdate, 'date': startdate
+            })
+            if template_subst_mode == 'python-fmt':
+                # template_kwargs must be dict/mapping: (template_args_order no longer supported)
+                try:
+                    template_content = template_content.format(**template_kwargs)
+                except KeyError as exc:
+                    print("%s: Unknown template variable %s" % (exc.__class__.__name__, exc))
+                    sublime.status_message("ERROR: Unrecognized variable name in template: %s" % (exc,))
+                    raise exc
+            elif template_subst_mode == 'python-%':
+                # "%s" string interpolation: template_vars must be tuple or dict (both will work):
+                template_content = template_content % template_kwargs
+            else:
+                print("Unrecognized template_subst_mode '%s'" % (template_subst_mode,))
+
+            # Add template to buffer text string:
+            # self.exp_buffer_text = "".join(text.strip() for text in (self.exp_buffer_text, template_content))
+            self.exp_buffer_text += template_content
+
+        else:
+            print('No template specified (settings key "eln_experiments_template").')
+
+        # 6. Append self.exp_buffer_text to the view:
+        exp_view.run_command('eln_insert_text', {'position': exp_view.size(), 'text': self.exp_buffer_text})
+
+        # 7. Add a link to experiments_overview_page (local file):
+        # if experiments_overview_page:
+        #     # Generate a link to this experiment:
+        #     link_fmt = mw.get_setting('eln_experiments_overview_link_fmt', "\n* [[{}]]")
+        #     if self.pagetitle:
+        #         link_text = link_fmt.format(self.pagetitle)
+        #     else:
+        #         # Add a link to the current buffer's title, assuming the experiment header is the same as foldername
+        #         link = "{}#{}".format(mw.get_title(), foldername.replace(' ', '_'))
+        #         link_text = link_fmt.format(link)
+        #
+        #     # Insert link on experiments_overview_page. Currently, this must be a local file.
+        #     # (We just edit the file on disk and let ST pick up the change if the file is opened in any view.)
+        #     if os.path.isfile(experiments_overview_page):
+        #         print("Adding link '%s' to file '%s'" % (link_text, experiments_overview_page))
+        #         # We have a local file, append link:
+        #         with open(experiments_overview_page, 'a') as fd:
+        #             # In python3, there is a bigger difference between binary 'b' mode and normal (text) mode.
+        #             # Do not open in binary 'b' mode when writing/appending strings. It is not supported in python 3.
+        #             # If you want to write strings to files opened in binary mode, you have to cast the string to bytes / encode it:
+        #             # >>> fd.write(bytes(mystring, 'UTF-8')) *or* fd.write(mystring.encode('UTF-8'))
+        #             fd.write(link_text) # The format should include newline if desired.
+        #         print("Appended %s chars to file '%s" % (len(link_text), experiments_overview_page))
+        #     else:
+        #         # User probably specified a page on the wiki. (This is not yet supported.)
+        #         # Even if this is a page on the wiki, you should check whether that page is already opened in Sublime.
+        #         ## TODO: Implement specifying experiments_overview_page from server.
+        #         print("Using experiment_overview_page from the server is not yet supported.")
+
+        print("ElnCreateNewExperimentCommand completed!\n")
+        if save_to_file:
+            self.window.run_command("save")
+        if enable_autosave:
+            self.window.run_command("auto_save", args={"enable": True})
 
 
-
-
-############## DNA/RNA SEQUENCE UTILITIES ###########################
-
+#
+#
+#
+# DNA/RNA SEQUENCE UTILITIES:
+# ---------------------------
+#
 
 
 class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
@@ -317,7 +574,6 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
                 pos = self.view.size()
                 self.view.insert(edit, pos, text)
             print("Inserted %s chars at pos %s" % (len(text), pos))
-
 
 class ElnSequenceStats(sublime_plugin.TextCommand):
     """
