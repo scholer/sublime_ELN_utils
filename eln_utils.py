@@ -307,7 +307,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
 
     def expid_received(self, expid):
         """ Saves expid input and asks the user for titledesc. """
-        self.expid = expid # empty string is OK.
+        self.expid = expid.strip()  # strip leading/trailing whitespace; empty string is OK.
         if self.titledesc is not None:
             self.titledesc_received(self.titledesc)
         else:
@@ -315,7 +315,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
 
     def titledesc_received(self, titledesc):
         """ Saves titledesc input and asks the user for bigcomment text. """
-        self.titledesc = titledesc # empty string is OK.
+        self.titledesc = titledesc.strip()  # strip leading/trailing whitespace; empty string is OK.
         # self.window.show_input_panel('Big page comment:', self.expid, self.bigcomment_received, None, None)
         self.done_collecting_variables()
 
@@ -375,6 +375,8 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
         # If save_to_file is True, the view/buffer is saved locally immediately upon creation:
         # Experiments overview page: A file/page that lists (and links) to all experiments.
         experiments_overview_page = settings.get('eln_experiments_overview_page')
+        if experiments_overview_page and experiments_overview_page[0] == '~':
+            experiments_overview_page = os.path.expanduser(experiments_overview_page)
         save_to_file = settings.get('eln_experiments_save_to_file', True)
         # Enable auto save. Requires auto-save plugin. github.com/scholer/auto-save
         enable_autosave = settings.get('eln_experiments_enable_autosave', False)
@@ -387,8 +389,9 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
         # 1. Make experiment folder, if appropriate:
         foldername = folderpath = None
         if exp_basedir and foldername_fmt:
+            exp_basedir = exp_basedir.strip()
             if os.path.isdir(exp_basedir):
-                foldername = foldername_fmt.format(expid=self.expid, titledesc=self.titledesc)
+                foldername = foldername_fmt.format(expid=self.expid, titledesc=self.titledesc).strip()
                 folderpath = os.path.join(exp_basedir, foldername)
                 if os.path.isdir(folderpath):
                     msg = "NOTICE: The folderpath for the new experiment already exists: %s" % folderpath
