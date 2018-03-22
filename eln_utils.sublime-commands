@@ -14,14 +14,15 @@
     {"caption": "ELN: Merge notes (header+bullets+timestamp)", "command": "eln_merge_journal_notes",
         "args": {"move": true, "add_journal_header": true, "paragraphs_to_bullet": true, "add_timestamp": true}},
 
+    // Sequence Transformation commands:
     // ElnDnaComplementFromSelectionCommand
-    { "caption": "ELN Seq: Transform selection to DNA complement.", "command": "eln_sequence_transform",
+    { "caption": "ELN Seq: Transform selection to DNA complement (compl)", "command": "eln_sequence_transform",
       "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true}
     },
-    { "caption": "ELN Seq: Transform selection to DNA reversed complement.", "command": "eln_sequence_transform",
+    { "caption": "ELN Seq: Transform selection to DNA reversed complement (rcompl)", "command": "eln_sequence_transform",
       "args": {"complement": true, "reverse": true, "dna_only": false, "replace": true}
     },
-    { "caption": "ELN Seq: Reverse selection", "command": "eln_sequence_transform",
+    { "caption": "ELN Seq: Reverse selection (rev)", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}
     },
     { "caption": "ELN Seq: Sequence stats", "command": "eln_sequence_stats", "args": {"dna_only": false} }
