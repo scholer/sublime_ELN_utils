@@ -44,21 +44,26 @@ snippets = {'journal_date_header': "'''Journal, {date:%Y-%m-%d}:'''",
            }
 
 
-rseq = r = lambda seq: "".join(reversed(seq))
 wc_maps = {
+    # Note: This will also reverse ends, which effectively reverses direction of product strand.
+    # 'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
     'dna': dict(zip("5'-ATGC-3'", "3'-TACG-5'")),
     'rna': dict(zip("5'-AUGC-3'", "3'-UACG-5'")),
     }
 
 
-def compl(seq, wc_map="dna"):
+def compl(seq, wc_map="dna", strict=False):
     """ Return complement of seq (not reversed). """
-    return "".join(wc_maps[wc_map].get(b, b) for b in seq.upper())
+    WC = wc_maps[wc_map]
+    if strict:
+        return "".join(WC[b] for b in seq.upper())
+    else:
+        return "".join(WC.get(b, b) for b in seq.upper())
 
 
-def rcompl(seq, wc_map="dna"):
+def rcompl(seq, wc_map="dna", strict=True):
     """ Return complement of seq, reversed. """
-    return "".join(reversed(compl(seq, wc_map)))
+    return compl(seq[::-1], wc_map, strict=strict)
 
 
 def dna_filter(seq):
@@ -66,6 +71,7 @@ def dna_filter(seq):
 
 
 def get_settings():
+    """ Get all ELN_Utils settings. """
     return sublime.load_settings(SETTINGS_NAME)
 
 
@@ -528,6 +534,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
 class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
     """
     Command string: eln_sequence_transform
+
     Commonly-used shortcuts are:
         cursor_position = self.view.sel()[0].begin()
         end_of_file = self.view.size()
@@ -537,9 +544,15 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
     def run(self, edit, complement=True, reverse=False, dna_only=False, replace=True, wc_map="dna"):
         """
         TextCommand entry point, edit token is provided by Sublime.
-        - reverse: If true, reverse the complement.
-        - dna_only: Filter input to only include DNA bases.
-        - replace: replace selection. If False, the complement sequences will be appended to buffer.
+
+        Args:
+            reverse: If true, reverse the selection. (Purely about print direction, not strand direction.)
+            dna_only: Filter input to only include DNA bases.
+            replace: replace selection. If False, the complement sequences will be appended to buffer.
+
+        Note: The WC map will also map (5->3, 3->5), which effectively reverses direction of product strand.
+        'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
+
         """
         selections = self.view.sel()
         for selection in selections:
@@ -551,7 +564,7 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
             if complement:
                 text = rcompl(seq, wc_map) if reverse else compl(seq, wc_map)
             elif reverse:
-                text = rseq(seq)
+                text = seq[::-1]
             if reverse:
                 # Last step in "5'-ATGC-3'" -> "'5-GCAT-'3" -> "5'-GCAT-3'"
                 text = text.replace("'5-", "5'-").replace("-'3", "-3'")
