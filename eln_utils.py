@@ -31,17 +31,18 @@ import glob
 import re
 from datetime import date, datetime
 import urllib.parse
-import logging
-logger = logging.getLogger(__name__)
 import sublime
 import sublime_plugin
+import logging
+logger = logging.getLogger(__name__)
 
 
 SETTINGS_NAME = 'eln_utils.sublime-settings'
-snippets = {'journal_date_header': "'''Journal, {date:%Y-%m-%d}:'''",
-            'journal_daily_start': "'''Journal, {date:%Y-%m-%d}:'''\n* {date:%H:%M} > ",
-            'journal_timestamp': "* {date:%H:%M} > ",
-           }
+snippets = {
+    'journal_date_header': "'''Journal, {date:%Y-%m-%d}:'''",
+    'journal_daily_start': "'''Journal, {date:%Y-%m-%d}:'''\n* {date:%H:%M} > ",
+    'journal_timestamp': "* {date:%H:%M} > ",
+}
 
 
 wc_maps = {
@@ -49,16 +50,16 @@ wc_maps = {
     # 'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
     'dna': dict(zip("5'-ATGC-3'", "3'-TACG-5'")),
     'rna': dict(zip("5'-AUGC-3'", "3'-UACG-5'")),
-    }
+}
 
 
 def compl(seq, wc_map="dna", strict=False):
     """ Return complement of seq (not reversed). """
-    WC = wc_maps[wc_map]
+    wc = wc_maps[wc_map]
     if strict:
-        return "".join(WC[b] for b in seq.upper())
+        return "".join(wc[b] for b in seq.upper())
     else:
-        return "".join(WC.get(b, b) for b in seq.upper())
+        return "".join(wc.get(b, b) for b in seq.upper())
 
 
 def rcompl(seq, wc_map="dna", strict=True):
@@ -102,7 +103,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         if position is None:
             position = self.view.sel()[0].begin()
         if position == -1:
-            position = self.view.size() # End of file
+            position = self.view.size()  # End of file
         self.position = position
         self.move = move
         self.add_journal_header = add_journal_header
@@ -144,8 +145,7 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         selected_index = combined.index(view_filename)
         # Or find files with same expid:
         view_filename_pat = settings.get('view_filename_pat')
-        view_regex_match = re.match(view_filename_pat, os.path.basename(view_filename)) \
-                           if view_filename_pat else 0
+        view_regex_match = re.match(view_filename_pat, os.path.basename(view_filename)) if view_filename_pat else 0
         if view_regex_match is None:
             print(view_filename_pat, "did not match view file basename:", os.path.basename(view_filename))
         notes_filename_pat = settings.get('notes_filename_pat')
@@ -192,13 +192,13 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         sublime.save_settings(SETTINGS_NAME)
 
         # read file:
-        with open(self.filename) as fp:
+        with open(self.filename, encoding='utf-8') as fp:
             content = fp.read()
         if len(content) == 0:
             print("File does not contain any content:", content)
         # reformat paragraphs to bullet point:
-        timestamp = snippets["journal_timestamp"].format(date=datetime.now()) if self.add_timestamp \
-                    else ("* " if self.paragraphs_to_bullet else "")
+        timestamp = (snippets["journal_timestamp"].format(date=datetime.now()) if self.add_timestamp
+                     else ("* " if self.paragraphs_to_bullet else ""))
         if self.paragraphs_to_bullet:
             content = "\n".join(timestamp + line for line in content.strip().split("\n\n"))
         elif self.add_timestamp:
@@ -207,12 +207,12 @@ class ElnMergeJournalNotesCommand(sublime_plugin.TextCommand):
         # Add journal header:
         if self.add_journal_header:
             header = snippets['journal_date_header'].format(date=datetime.now())
-            #self.view.insert(edit_token, position, header)
+            # self.view.insert(edit_token, position, header)
             content = "\n".join([header, content])
 
-        # Remove content from origin file:
+        # Remove content from origin file (overwrite file so it contains just a single blank line):
         if self.move:
-            with open(self.filename, 'w') as fp:
+            with open(self.filename, 'w', encoding='utf-8') as fp:
                 fp.write("\n")
             print("Removed content from", self.filename)
 
@@ -236,7 +236,7 @@ class ElnInsertTextCommand(sublime_plugin.TextCommand):
         if position is None:
             position = self.view.sel()[0].begin()
         if position == -1:
-            position = self.view.size() # End of file
+            position = self.view.size()  # End of file
 
         self.view.insert(edit, position, text)
         print("Inserted %s chars at pos %s" % (len(text), position))
@@ -261,7 +261,7 @@ class ElnInsertSnippetCommand(sublime_plugin.TextCommand):
             # Note: Probably better to use built-in command, "insert":
             # { "keys": ["enter"], "command": "insert", "args": {"characters": "\n"} }
             position = self.view.sel()[0].begin()
-            #position = self.view.size()
+            # position = self.view.size()
 
         # If <snippet> is not a key in the standard snippets dict, assume it is usable as-is:
         text = snippets.get(snippet, snippet)
@@ -279,7 +279,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
     - load buffer with template, if mediawiker_experiments_template
     --- and fill in template argument, as specified by mediawiker_experiments_template_args
     - Done: Create link to the new experiment page and append it to experiments_overview_page.
-    - TODO: Move this command to ELN_Utils package.
+    - Done: Move this command to rsenv.eln package.
     - Done: Option to save view buffer to file.
     - Done: Option to enable auto_save
     This is a window command, since we might not have any views open when it is invoked.
@@ -347,7 +347,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
             'eln_experiments_save_to_file'
             'eln_experiments_enable_autosave'
         """
-        print("\nCreating new experiment (expid=%s, titledesc=%s..." % (self.expid, self.titledesc))
+        print("\nCreating new experiment (expid=%s, titledesc=%s, dummy=%s..." % (self.expid, self.titledesc, dummy))
         # Ways to format a date/datetime as string: startdate.strftime("%Y-%m-%d"), or "{:%Y-%m-%d}".format(startdate)
 
         # Non-attribute settings:
@@ -383,6 +383,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
         experiments_overview_page = settings.get('eln_experiments_overview_page')
         if experiments_overview_page and experiments_overview_page[0] == '~':
             experiments_overview_page = os.path.expanduser(experiments_overview_page)
+            print(" - experiments_overview_page:", experiments_overview_page)
         save_to_file = settings.get('eln_experiments_save_to_file', True)
         # Enable auto save. Requires auto-save plugin. github.com/scholer/auto-save
         enable_autosave = settings.get('eln_experiments_enable_autosave', False)
@@ -419,7 +420,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
 
         # 2. Make new view, if title_fmt is specified:
         self.pagetitle = title_fmt.format(expid=self.expid, titledesc=self.titledesc)
-        self.view = exp_view = sublime.active_window().new_file() # Make a new file/buffer/view
+        self.view = exp_view = sublime.active_window().new_file()  # Make a new file/buffer/view
         self.window.focus_view(exp_view)  # exp_view is now the window's active_view
         view_default_dir = folderpath
         filename = filename_fmt.format(title=self.pagetitle, expid=self.expid, titledesc=self.titledesc)
@@ -431,7 +432,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
         if view_default_dir:
             view_default_dir = os.path.expanduser(view_default_dir)
             print("Setting view's default dir to:", view_default_dir)
-            exp_view.settings().set('default_dir', view_default_dir) # Update the view's working dir.
+            exp_view.settings().set('default_dir', view_default_dir)  # Update the view's working dir.
         exp_view.set_name(filename)
         filepath = os.path.join(folderpath, filename)
         # Manually set the syntax file to use (if the view does not have a file extension)
@@ -449,7 +450,7 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
             print("Using template:", template)
             try:
                 # Open user configured local template file:
-                with open(template) as fd:
+                with open(template, encoding='utf-8') as fd:
                     template_content = fd.read()
                 print(" - Template loaded from disk; length:", len(template_content))
             except FileNotFoundError as exc:
@@ -506,14 +507,14 @@ class ElnCreateNewExperimentCommand(sublime_plugin.WindowCommand):
         #         with open(experiments_overview_page, 'a') as fd:
         #             # In python3, there is a bigger difference between binary 'b' mode and normal (text) mode.
         #             # Do not open in binary 'b' mode when writing/appending strings. It is not supported in python 3.
-        #             # If you want to write strings to files opened in binary mode, you have to cast the string to bytes / encode it:
+        #             # To write strings to files opened in binary mode, cast the string to bytes (encode them):
         #             # >>> fd.write(bytes(mystring, 'UTF-8')) *or* fd.write(mystring.encode('UTF-8'))
         #             fd.write(link_text) # The format should include newline if desired.
         #         print("Appended %s chars to file '%s" % (len(link_text), experiments_overview_page))
         #     else:
         #         # User probably specified a page on the wiki. (This is not yet supported.)
         #         # Even if this is a page on the wiki, you should check whether that page is already opened in Sublime.
-        #         ## TODO: Implement specifying experiments_overview_page from server.
+        #         # Consider: Implement specifying experiments_overview_page from server.
         #         print("Using experiment_overview_page from the server is not yet supported.")
 
         print("ElnCreateNewExperimentCommand completed!\n")
@@ -546,9 +547,12 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
         TextCommand entry point, edit token is provided by Sublime.
 
         Args:
+            edit:
             reverse: If true, reverse the selection. (Purely about print direction, not strand direction.)
             dna_only: Filter input to only include DNA bases.
             replace: replace selection. If False, the complement sequences will be appended to buffer.
+            complement:
+            wc_map:
 
         Note: The WC map will also map (5->3, 3->5), which effectively reverses direction of product strand.
         'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
@@ -577,6 +581,7 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
                 pos = self.view.size()
                 self.view.insert(edit, pos, text)
             print("Inserted %s chars at pos %s" % (len(text), pos))
+
 
 class ElnSequenceStats(sublime_plugin.TextCommand):
     """
