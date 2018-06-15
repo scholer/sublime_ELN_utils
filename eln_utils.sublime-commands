@@ -15,8 +15,9 @@
     {"caption": "ELN: Merge notes (header+bullets+timestamp)", "command": "eln_merge_journal_notes",
         "args": {"move": true, "add_journal_header": true, "paragraphs_to_bullet": true, "add_timestamp": true}},
 
-    // New experiment:
+    // New experiment/project:
     { "caption": "ELN: Create New Experiment", "command": "eln_create_new_experiment", "args": {}},
+    { "caption": "ELN: Create New Project", "command": "eln_create_new_project", "args": {}},
 
     // Sequence Transformation commands:
     // ElnDnaComplementFromSelectionCommand

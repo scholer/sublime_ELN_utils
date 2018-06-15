@@ -6,7 +6,8 @@
     "view_filename_pat": "RasmusProjects.*?(?P<expid>RS\\d{3})[-_+\\s]+(?P<exp_desc>.*)\\.mediawiki",
     "notes_filename_pat": ".*?(?P<expid>RS\\d{3})([-_])?(?P<exp_subentryidx>\\w)?.?\\s*?(?P<exp_desc>.*)\\.txt",
     "notes_filename_keys": ["expid"],
-    // Configure these to be able to use the "New Experiment" command:
+
+    // Configure these to use the "New Experiment" command:
     "eln_experiments_basedir": null,            // New experiments are saved here. *Required*
     "eln_experiments_foldername_fmt": "{expid} {titledesc}",  // Folder name format for new experiment
     "eln_experiments_title_fmt": "{expid} {titledesc}", // Title of the new experiment (metadata).
@@ -18,5 +19,23 @@
     "eln_experiments_template_kwargs": {},      // Additional parameters to pass to the template.
     "eln_experiments_overview_page": null,      // If provided, a link to the new page will be appended to this page.
     "eln_experiments_save_to_file": true,       // Save page/file after creating a new experiment.
-    "eln_experiments_enable_autosave": false    // Enable auto-save; auto-save plugin must be installed.
+    "eln_experiments_enable_autosave": false,    // Enable auto-save; auto-save plugin must be installed.
+
+    // Configure these to use the "New Project" command:s
+    "eln_projects_basedir": null,            // New projects are saved here. *Required*
+    "eln_projects_foldername_fmt": "{projectid}",  // Folder name format for new project
+    "eln_projects_title_fmt": "{titledesc}", // Title of the new project (metadata).
+    "eln_projects_filename_fmt": "{projectid}.md",       // Filename of new project
+    "eln_projects_filename_quote": false,        // Quote the filename (replace spaces and other characters).
+    "eln_projects_filename_quote_safe": false,   // If true, use "+" instead of "%20" for spaces when quoting.
+    "eln_projects_template": null,           // *Required* Path to local template file used for new projects.
+    "eln_projects_template_subst_mode": "python-fmt",  // Template interpolation method, 'python-fmt' or 'python-%'
+    "eln_projects_template_kwargs": {},      // Additional parameters to pass to the template, e.g. for shared templates.
+    "eln_projects_overview_page": null,      // If provided, a link to the new page will be appended to this page.
+    // "eln_projects_userinput": null,      // A list of (key, description) tuples for obtaining userinput.
+    "eln_projects_userinput": [
+        ["projectid", "Project Identifier"],
+        ["titledesc", "Title description"]
+    ],
+
 }
