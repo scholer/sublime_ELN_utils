@@ -19,6 +19,9 @@
     { "caption": "ELN: Create New Experiment", "command": "eln_create_new_experiment", "args": {}},
     { "caption": "ELN: Create New Project", "command": "eln_create_new_project", "args": {}},
 
+    // Markdown compilation and preview:
+    { "caption": "ELN: Open as HTML file in browser", "command": "eln_open_html_in_browser", "args": {} },
+
     // Sequence Transformation commands:
     // ElnDnaComplementFromSelectionCommand
     { "caption": "ELN Seq: Transform selection to DNA complement (compl)", "command": "eln_sequence_transform",
@@ -30,5 +33,5 @@
     { "caption": "ELN Seq: Reverse selection (rev)", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}
     },
-    { "caption": "ELN Seq: Sequence stats", "command": "eln_sequence_stats", "args": {"dna_only": false} }
+    { "caption": "ELN Seq: Sequence stats", "command": "eln_sequence_stats", "args": {"dna_only": false} },
 ]

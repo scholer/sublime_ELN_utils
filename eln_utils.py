@@ -29,6 +29,7 @@ from __future__ import print_function
 import os
 import glob
 import re
+import webbrowser
 from datetime import date, datetime
 from collections import OrderedDict, deque
 import urllib.parse
@@ -241,6 +242,33 @@ class ElnInsertTextCommand(sublime_plugin.TextCommand):
 
         self.view.insert(edit, position, text)
         print("Inserted %s chars at pos %s" % (len(text), position))
+
+
+class ElnOpenHtmlInBrowserCommand(sublime_plugin.TextCommand):
+    """
+    Command string: eln_open_html_in_browser
+    When run, will open {basename}.html in the default browser.
+    """
+    def run(self, edit):
+        """ TextCommand entry point, edit token is provided by Sublime. """
+        # Variables reflecting Sublime Text's build variables, c.f.
+        # http://docs.sublimetext.info/en/latest/reference/build_systems/configuration.html
+        filepath = self.view.file_name()  # e.g. '/path/to/Document.md'
+        print("View.file_name():", filepath)
+        directory = os.path.dirname(filepath)  # e.g. '/path/to'
+        filename = os.path.basename(filepath)  # e.g. 'Document.md'
+        filebasename, ext = os.path.splitext(filename)   # e.g. 'Document', '.md'
+        fnroot, ext = os.path.splitext(filepath)  # e.g. '/path/to/Document', '.md'
+        html_path = fnroot + '.html'
+        if not os.path.isfile(html_path):
+            html_path = filepath + '.html'
+            if not os.path.isfile(html_path):
+                print("ERROR: Neither {fnroot}.html nor {filepath}.html exists, cannot open file.")
+                return
+        msg = "Opening in browser: " + html_path
+        print(msg)
+        sublime.status_message(msg)
+        webbrowser.open(html_path)
 
 
 class ElnInsertSnippetCommand(sublime_plugin.TextCommand):
