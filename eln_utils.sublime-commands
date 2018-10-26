@@ -33,5 +33,11 @@
     { "caption": "ELN Seq: Reverse selection (rev)", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}
     },
+    { "caption": "ELN Seq: Convert selected DNA sequence to RNA letters", "command": "eln_sequence_transform",
+      "args": {"complement": false, "reverse": false, "dna_only": false, "convert": "dna-to-rna", "replace": true}
+    },
+    { "caption": "ELN Seq: Convert selected RNA sequence to DNA letters", "command": "eln_sequence_transform",
+      "args": {"complement": false, "reverse": false, "dna_only": false, "convert": "rna-to-dna", "replace": true}
+    },
     { "caption": "ELN Seq: Sequence stats", "command": "eln_sequence_stats", "args": {"dna_only": false} },
 ]

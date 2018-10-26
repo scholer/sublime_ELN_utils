@@ -50,23 +50,35 @@ snippets = {
 wc_maps = {
     # Note: This will also reverse ends, which effectively reverses direction of product strand.
     # 'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
-    'dna': dict(zip("5'-ATGC-3'", "3'-TACG-5'")),
-    'rna': dict(zip("5'-AUGC-3'", "3'-UACG-5'")),
+    'dna': dict(zip("5'-ATGCatgc-3'", "3'-TACGtacg-5'")),
+    'rna': dict(zip("5'-AUGCaugc-3'", "3'-UACGuacg-5'")),
+    'rna-to-dna': dict(zip("5'-AUGCaugc-3'", "3'-TACGtacg-5'")),
+    'dna-to-rna': dict(zip("5'-ATGCatgc-3'", "3'-UACGuacg-5'")),
 }
 
 
-def compl(seq, wc_map="dna", strict=False):
+def compl(seq, wc_map="dna", strict=False, toupper=False):
     """ Return complement of seq (not reversed). """
     wc = wc_maps[wc_map]
+    if toupper:
+        seq = seq.upper()
     if strict:
-        return "".join(wc[b] for b in seq.upper())
+        return "".join(wc[b] for b in seq)
     else:
-        return "".join(wc.get(b, b) for b in seq.upper())
+        return "".join(wc.get(b, b) for b in seq)
 
 
 def rcompl(seq, wc_map="dna", strict=True):
     """ Return complement of seq, reversed. """
     return compl(seq[::-1], wc_map, strict=strict)
+
+
+def dna_to_rna(seq):
+    return seq.replace('T', 'U').replace('t', 'u')
+
+
+def rna_to_dna(seq):
+    return seq.replace('U', 'u').replace('u', 't')
 
 
 def dna_filter(seq):
@@ -870,7 +882,7 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
         start_of_file = 0
     """
 
-    def run(self, edit, complement=True, reverse=False, dna_only=False, replace=True, wc_map="dna"):
+    def run(self, edit, complement=True, reverse=False, dna_only=False, replace=True, wc_map="dna", convert=None):
         """
         TextCommand entry point, edit token is provided by Sublime.
 
@@ -891,6 +903,10 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
             if selection.empty():
                 continue
             seq = self.view.substr(selection)
+            if convert == 'dna-to-rna':
+                seq = dna_to_rna(seq)
+            elif convert == 'rna-to-dna':
+                seq = rna_to_dna(seq)
             if dna_only:
                 seq = dna_filter(seq)
             if complement:
