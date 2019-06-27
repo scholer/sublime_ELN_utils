@@ -27,8 +27,13 @@
     { "caption": "ELN Seq: Transform selection to DNA complement (compl)", "command": "eln_sequence_transform",
       "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true}
     },
-    { "caption": "ELN Seq: Transform selection to DNA reversed complement (rcompl)", "command": "eln_sequence_transform",
-      "args": {"complement": true, "reverse": true, "dna_only": false, "replace": true}
+    { "caption": "ELN Seq: Transform selection to DNA reversed complement (rcompl)",
+      "command": "eln_sequence_transform",
+      "args": {"complement": true, "reverse": true, "dna_only": false, "replace": true, "strict":  false}
+    },
+    { "caption": "ELN Seq: Transform selection to DNA reversed complement (rcompl, strict)",
+      "command": "eln_sequence_transform",
+      "args": {"complement": true, "reverse": true, "dna_only": false, "replace": true, "strict":  true}
     },
     { "caption": "ELN Seq: Reverse selection (rev)", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}

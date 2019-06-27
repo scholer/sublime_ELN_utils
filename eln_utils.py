@@ -25,7 +25,7 @@ a bit easier.
 
 """
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import os
 import glob
 import re
@@ -50,14 +50,21 @@ snippets = {
 wc_maps = {
     # Note: This will also reverse ends, which effectively reverses direction of product strand.
     # 'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
-    'dna': dict(zip("5'-ATGCatgc-3'", "3'-TACGtacg-5'")),
-    'rna': dict(zip("5'-AUGCaugc-3'", "3'-UACGuacg-5'")),
-    'rna-to-dna': dict(zip("5'-AUGCaugc-3'", "3'-TACGtacg-5'")),
-    'dna-to-rna': dict(zip("5'-ATGCatgc-3'", "3'-UACGuacg-5'")),
+    'dna': dict(zip("ATGCatgc", "TACGtacg")),
+    'rna': dict(zip("AUGCaugc", "UACGuacg")),
+    'rna-to-dna': dict(zip("AUGCaugc", "TACGtacg")),
+    'dna-to-rna': dict(zip("ATGCatgc", "UACGuacg")),
+    # 'dna+': dict(zip("ATGCatgc -53'?", "TACGtacg -53'?")),
+    # 'rna+': dict(zip("AUGCaugc -53'?", "UACGuacg -53'?")),
+    # 'rna-to-dna+': dict(zip("5'-AUGCaugc-3'", "3'-TACGtacg-5'")),
+    # 'dna-to-rna+': dict(zip("5'-ATGCatgc-3'", "3'-UACGuacg-5'")),
 }
+specials_map = dict(zip(" -53'?", " -53'?"))
+# Maps where special characters " -53'?" map onto themselves.
+wc_maps.update({name+'+': wc_map for name, wc_map in wc_maps.items()})
 
 
-def compl(seq, wc_map="dna", strict=False, toupper=False):
+def compl(seq, wc_map="dna", strict=True, toupper=False):
     """ Return complement of seq (not reversed). """
     wc = wc_maps[wc_map]
     if toupper:
@@ -68,9 +75,9 @@ def compl(seq, wc_map="dna", strict=False, toupper=False):
         return "".join(wc.get(b, b) for b in seq)
 
 
-def rcompl(seq, wc_map="dna", strict=True):
+def rcompl(seq, wc_map="dna", strict=True, toupper=False):
     """ Return complement of seq, reversed. """
-    return compl(seq[::-1], wc_map, strict=strict)
+    return compl(seq[::-1], wc_map=wc_map, strict=strict, toupper=toupper)
 
 
 def dna_to_rna(seq):
@@ -882,17 +889,22 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
         start_of_file = 0
     """
 
-    def run(self, edit, complement=True, reverse=False, dna_only=False, replace=True, wc_map="dna", convert=None):
+    def run(self, edit, complement=True, reverse=False, dna_only=False, replace=True, wc_map="dna",
+            convert=None, strict=False, toupper=False):
         """
         TextCommand entry point, edit token is provided by Sublime.
 
         Args:
             edit:
             reverse: If true, reverse the selection. (Purely about print direction, not strand direction.)
-            dna_only: Filter input to only include DNA bases.
+            dna_only: Filter input to only include DNA bases. All other characters are discarded.
             replace: replace selection. If False, the complement sequences will be appended to buffer.
-            complement:
-            wc_map:
+            complement: Produce the sequence complement using the given base-pairing map.
+            wc_map: The base-pairing map to use, e.g. 'dna', 'rna'.
+            convert: Convert the sequence, e.g. 'dna-to-rna' or 'rna-to-dna'.
+            strict: Be strict when producing the complement. Bases (characters) not in the map will yield a KeyError.
+                    If strict is disabled, any character not found in the wc_map is just used as-is.
+            toupper: Convert output to upper-case.
 
         Note: The WC map will also map (5->3, 3->5), which effectively reverses direction of product strand.
         'reverse' keyword is thus purely about the print direction, not which end is 5' vs 3'.
@@ -902,20 +914,20 @@ class ElnSequenceTransformCommand(sublime_plugin.TextCommand):
         for selection in selections:
             if selection.empty():
                 continue
-            seq = self.view.substr(selection)
+            text = self.view.substr(selection)
             if convert == 'dna-to-rna':
-                seq = dna_to_rna(seq)
+                text = dna_to_rna(text)
             elif convert == 'rna-to-dna':
-                seq = rna_to_dna(seq)
+                text = rna_to_dna(text)
             if dna_only:
-                seq = dna_filter(seq)
+                text = dna_filter(text)
             if complement:
-                text = rcompl(seq, wc_map) if reverse else compl(seq, wc_map)
-            elif reverse:
-                text = seq[::-1]
+                text = compl(text, wc_map=wc_map, strict=strict, toupper=toupper)
             if reverse:
-                # Last step in "5'-ATGC-3'" -> "'5-GCAT-'3" -> "5'-GCAT-3'"
-                text = text.replace("'5-", "5'-").replace("-'3", "-3'")
+                text = text[::-1]
+                # Fix weirdness: Last step in "5'-ATGC-3'" -> "'5-GCAT-'3" -> "5'-GCAT-3'"
+                text = (text.replace("'5", "5'").replace("'3", "3'").replace("5yC", "Cy5").replace("3yC", "Cy3").
+                        replace("2HN", "NH2"))
             if replace:
                 # Replace selection with new sequence
                 self.view.replace(edit, selection, text)
