@@ -25,7 +25,11 @@
     // Sequence Transformation commands:
     // ElnDnaComplementFromSelectionCommand
     { "caption": "ELN Seq: Transform selection to DNA complement (compl)", "command": "eln_sequence_transform",
-      "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true}
+      "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true, "strict": false}
+    },
+    { "caption": "ELN Seq: Transform selection to DNA complement (compl, preserve mods)",
+      "command": "eln_sequence_transform",
+      "args": {"complement": true, "reverse": false, "dna_only": false, "replace": true, "strict": false, "mod_regex": "IDT"}
     },
     { "caption": "ELN Seq: Transform selection to DNA reversed complement (rcompl)",
       "command": "eln_sequence_transform",
@@ -37,6 +41,10 @@
     },
     { "caption": "ELN Seq: Reverse selection (rev)", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": true, "dna_only": false, "replace": true}
+    },
+    { "caption": "ELN Seq: Filter selection, remove all non-nucleotide (DNA/RNA) characters and mods.",
+      "command": "eln_sequence_transform",
+      "args": {"complement": false, "reverse": false, "dna_only": true, "convert": null, "replace": true}
     },
     { "caption": "ELN Seq: Convert selected DNA sequence to RNA letters", "command": "eln_sequence_transform",
       "args": {"complement": false, "reverse": false, "dna_only": false, "convert": "dna-to-rna", "replace": true}
